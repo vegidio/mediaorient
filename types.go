@@ -1,6 +1,9 @@
 package mediaorient
 
-import "image"
+import (
+	"fmt"
+	"image"
+)
 
 // Media represents a media object.
 type Media struct {
@@ -16,6 +19,9 @@ type Media struct {
 	Width int `json:"width"`
 	// Height represents the height of the media in pixels.
 	Height int `json:"height"`
-	// Size represents the size of the media file in bytes.
-	Size int64 `json:"size"`
+}
+
+func (m *Media) String() string {
+	return fmt.Sprintf(`{Name: %s, Type: %s, Rotation: %d, Width: %d, Height: %d}`,
+		m.Name, m.Type, m.Rotation, m.Width, m.Height)
 }

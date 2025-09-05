@@ -2,6 +2,7 @@ package mediaorient
 
 import (
 	_ "embed"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,20 +14,53 @@ import (
 var modelBinary []byte
 var modelName = "efficient_net_v2.onnx"
 
-func init() {
+// Initialize sets up the media orientation detection system by configuring the ONNX runtime and ensuring all required
+// binaries are available.
+//
+// # Returns:
+//   - error: nil on success, or an error describing what went wrong during initialization.
+//
+// # Example:
+//
+//	if err := mediaorient.Initialize(); err != nil {
+//	    log.Fatal("Failed to initialize media orientation detection:", err)
+//	}
+func Initialize() error {
 	// Check if OnnxRuntime and the model are already saved in the user's config directory
 	onnxPath, modelPath, exists := hasBinaries("mediaorient")
 
 	if !exists {
 		if err := saveBinaries(onnxPath, modelPath); err != nil {
-			log.Fatalf("error initializing the app: %v\n", err)
+			return fmt.Errorf("error initializing mediaorient: %v\n", err)
 		}
 	}
 
 	if err := startRuntime(onnxPath, modelPath); err != nil {
-		log.Fatalf("error initializing the app: %v\n", err)
+		return fmt.Errorf("error initializing mediaorient: %v\n", err)
 	}
+
+	return nil
 }
+
+// Destroy cleans up resources used by the media orientation detection system.
+//
+// This function performs cleanup operations to free memory and resources allocated during initialization. It should be
+// called when the application is shutting down or when orientation detection functionality is no longer needed.
+//
+// It's recommended to use this function with defer for proper cleanup:
+//
+// # Example:
+//
+//	if err := mediaorient.Initialize(); err != nil {
+//	    log.Fatal("Initialization failed:", err)
+//	}
+//	defer mediaorient.Destroy() // Ensure cleanup on exit
+func Destroy() {
+	session.Destroy()
+	ort.DestroyEnvironment()
+}
+
+// region - Private functions
 
 func hasBinaries(configName string) (string, string, bool) {
 	configDir, err := os.UserConfigDir()
@@ -95,3 +129,5 @@ func startRuntime(onnxPath, modelPath string) error {
 
 	return nil
 }
+
+// endregion
