@@ -1,4 +1,4 @@
-package main
+package mediaorient
 
 import (
 	"fmt"
@@ -95,7 +95,7 @@ func softmax(x []float32) []float32 {
 }
 
 func preprocess(img image.Image, size int) []float32 {
-	// Center-crop to square and resize (closest to common ImageNet eval).
+	// Center-crop to square and resize (closest to common ImageNet eval)
 	square := imaging.Fill(img, size, size, imaging.Center, imaging.Lanczos)
 
 	b := square.Bounds()
