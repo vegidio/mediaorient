@@ -1,21 +1,29 @@
 package main
 
 import (
-	"log"
+	"cli/internal/charm"
+	"context"
+	"fmt"
+	"os"
+
+	_ "github.com/vegidio/avif-go"
+	_ "github.com/vegidio/heif-go"
 
 	"github.com/vegidio/mediaorient"
 )
 
 func main() {
 	if err := mediaorient.Initialize(); err != nil {
-		log.Fatal("Failed to initialize media orientation detection:", err)
+		charm.PrintError(fmt.Sprintf("Failed to initialize media orientation detection: %v\n", err))
 	}
 	defer mediaorient.Destroy()
 
-	media, err := mediaorient.CalculateFileOrientation("../assets/image_270.jpg")
-	if err != nil {
-		log.Println("Error:", err)
-	}
+	// Add support for AVIF and HEIC images
+	mediaorient.AddImageType(".avif", ".heic")
 
-	log.Println(media)
+	cmd := buildCliCommands()
+
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		charm.PrintError(err.Error())
+	}
 }

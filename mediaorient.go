@@ -21,6 +21,8 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 )
 
+const Version = "<version>"
+
 var session *ort.DynamicAdvancedSession
 
 func CalculateImageOrientation(name string, images []image.Image) (*Media, error) {
@@ -102,6 +104,38 @@ func CalculateFileOrientation(filePath string) (*Media, error) {
 	}
 
 	return CalculateImageOrientation(filePath, images)
+}
+
+func CalculateFilesOrientation(filePaths []string) ([]Media, error) {
+	media := make([]Media, 0)
+
+	for _, filePath := range filePaths {
+		newMedia, err := CalculateFileOrientation(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		media = append(media, *newMedia)
+	}
+
+	return media, nil
+}
+
+func CalculateDirectoryOrientation(directory string, mediaType string, recursive bool) ([]Media, error) {
+	mediaTypes := make([]string, 0)
+	if mediaType == "image" || mediaType == "all" {
+		mediaTypes = append(mediaTypes, validImageTypes...)
+	}
+	if mediaType == "video" || mediaType == "all" {
+		mediaTypes = append(mediaTypes, validVideoTypes...)
+	}
+
+	files, err := listFiles(directory, mediaTypes, recursive)
+	if err != nil {
+		return nil, err
+	}
+
+	return CalculateFilesOrientation(files)
 }
 
 // region - Private functions

@@ -10,9 +10,9 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 )
 
-//go:embed model/efficient_net_v2.onnx
+//go:embed model/image_orientation.onnx
 var modelBinary []byte
-var modelName = "efficient_net_v2.onnx"
+var modelName = "image_orientation.onnx"
 
 // Initialize sets up the media orientation detection system by configuring the ONNX runtime and ensuring all required
 // binaries are available.
