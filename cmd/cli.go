@@ -54,22 +54,6 @@ func buildCliCommands() *cli.Command {
 					if err != nil {
 						return err
 					}
-					if len(media) == 0 {
-						return nil
-					}
-
-					fmt.Printf("%+v\n", media)
-
-					//groups := groupAndReport(media, threshold, output)
-					//
-					//switch output {
-					//case "report":
-					//	charm.PrintGroupReport(groups)
-					//case "json":
-					//	charm.PrintGroupJson(groups)
-					//case "csv":
-					//	charm.PrintGroupCsv(groups)
-					//}
 
 					return nil
 				},
@@ -119,22 +103,6 @@ func buildCliCommands() *cli.Command {
 					if err != nil {
 						return err
 					}
-					if len(media) == 0 {
-						return nil
-					}
-
-					fmt.Printf("%+v\n", media)
-
-					//groups := groupAndReport(media, threshold, output)
-					//
-					//switch output {
-					//case "report":
-					//	charm.PrintGroupReport(groups)
-					//case "json":
-					//	charm.PrintGroupJson(groups)
-					//case "csv":
-					//	charm.PrintGroupCsv(groups)
-					//}
 
 					return nil
 				},
@@ -175,6 +143,11 @@ func buildCliCommands() *cli.Command {
 		},
 		Action: func(ctx context.Context, command *cli.Command) error {
 			return fmt.Errorf("command missing; try 'mediaorient --help' for more information")
+		},
+		After: func(ctx context.Context, command *cli.Command) error {
+			fmt.Print("\n")
+			charm.PrintReport(media)
+			return nil
 		},
 	}
 }

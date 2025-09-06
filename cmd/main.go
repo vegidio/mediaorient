@@ -15,12 +15,14 @@ import (
 func main() {
 	if err := mediaorient.Initialize(); err != nil {
 		charm.PrintError(fmt.Sprintf("Failed to initialize media orientation detection: %v\n", err))
+		return
 	}
 	defer mediaorient.Destroy()
 
 	// Add support for AVIF and HEIC images
 	mediaorient.AddImageType(".avif", ".heic")
 
+	fmt.Print("\n")
 	cmd := buildCliCommands()
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {

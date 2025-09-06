@@ -60,7 +60,8 @@ func CalculateImageOrientation(name string, images []image.Image) (*Media, error
 			}
 		}
 
-		rotation := []int{0, 90, 180, 270}[bestIdx]
+		// Swap 90 and 270 degrees so we have a clockwise rotation
+		rotation := []int{0, 270, 180, 90}[bestIdx]
 		rotations = append(rotations, rotation)
 
 		inputTensor.Destroy()

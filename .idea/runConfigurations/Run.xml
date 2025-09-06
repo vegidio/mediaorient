@@ -2,7 +2,7 @@
   <configuration default="false" name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="mediaorient" />
     <working_directory value="$PROJECT_DIR$/cmd" />
-    <parameters value="dir $PROJECT_DIR$/assets" />
+    <parameters value="dir ~/Development/Source/mediaorient/assets" />
     <kind value="PACKAGE" />
     <package value="cli" />
     <directory value="$PROJECT_DIR$" />

@@ -32,7 +32,7 @@ func initSpinnerModel(directory string, mediaType string, recursive bool) *spinn
 
 	return &spinnerDModel{
 		spinner:   s,
-		text:      fmt.Sprintf("⏳ Calculating the orientation in the directory %s", green.Render(directory)),
+		text:      fmt.Sprintf("⏳ Calculating the orientation in the directory %s...", green.Render(directory)),
 		directory: directory,
 		mediaType: mediaType,
 		recursive: recursive,
@@ -70,7 +70,7 @@ func (m *spinnerDModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *spinnerDModel) View() string {
-	return fmt.Sprintf("\n%s %s\n", m.text, m.spinner.View())
+	return fmt.Sprintf("%s %s\n", m.text, m.spinner.View())
 }
 
 func SpinnerDir(directory string, mediaType string, recursive bool) ([]mediaorient.Media, error) {

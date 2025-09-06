@@ -31,7 +31,7 @@ func initSpinnerFModel(files []string) *spinnerFModel {
 
 	return &spinnerFModel{
 		spinner: s,
-		text:    fmt.Sprintf("⏳ Calculating the orientation in %s files", green.Render(strconv.Itoa(len(files)))),
+		text:    fmt.Sprintf("⏳ Calculating the orientation in %s files...", green.Render(strconv.Itoa(len(files)))),
 		files:   files,
 	}
 }
