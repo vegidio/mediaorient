@@ -23,14 +23,14 @@ func buildCliCommands() *cli.Command {
 
 	return &cli.Command{
 		Name:            "mediaorient",
-		Usage:           "a tool to determine/fix the orientation of images & videos",
+		Usage:           "a tool to calculate/fix the orientation of images & videos",
 		UsageText:       "mediaorient <command>",
 		Version:         mediaorient.Version,
 		HideHelpCommand: true,
 		Commands: []*cli.Command{
 			{
 				Name:      "files",
-				Usage:     "determine/fix the orientation of one or more files",
+				Usage:     "calculate/fix the orientation of one or more files",
 				UsageText: "mediaorient files <file1> [<file2> ...] ",
 				Flags:     []cli.Flag{},
 				Action: func(ctx context.Context, command *cli.Command) error {
@@ -46,10 +46,10 @@ func buildCliCommands() *cli.Command {
 					})
 
 					if output == "report" {
-						charm.PrintCalculateFiles(len(files))
+						media, err = charm.SpinnerFiles(files)
+					} else {
+						media, err = mediaorient.CalculateFilesOrientation(files)
 					}
-
-					media, err = mediaorient.CalculateFilesOrientation(files)
 
 					if err != nil {
 						return err
@@ -76,7 +76,7 @@ func buildCliCommands() *cli.Command {
 			},
 			{
 				Name:      "dir",
-				Usage:     "determine/fix the orientation of files in a directory",
+				Usage:     "calculate/fix the orientation of files in a directory",
 				UsageText: "mediaorient dir <directory> [-r] [--mt <media-type>]",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
@@ -111,10 +111,11 @@ func buildCliCommands() *cli.Command {
 					}
 
 					if output == "report" {
-						charm.PrintCalculateDirectory(directory)
+						media, err = charm.SpinnerDir(directory, mediaType, recursive)
+					} else {
+						media, err = mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
 					}
 
-					media, err = mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
 					if err != nil {
 						return err
 					}
