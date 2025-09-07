@@ -45,10 +45,11 @@ func buildCliCommands() *cli.Command {
 						return fullFile
 					})
 
+					result := mediaorient.CalculateFilesOrientation(files)
 					if output == "report" {
-						media, err = charm.SpinnerFiles(files)
+						media, err = charm.StartSpinner(result, charm.TextFilesMessage(len(files)))
 					} else {
-						media, err = mediaorient.CalculateFilesOrientation(files)
+						//media, err = mediaorient.CalculateFilesOrientation(files)
 					}
 
 					if err != nil {
@@ -94,10 +95,11 @@ func buildCliCommands() *cli.Command {
 						return nil
 					}
 
+					result := mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
 					if output == "report" {
-						media, err = charm.SpinnerDir(directory, mediaType, recursive)
+						media, err = charm.StartSpinner(result, charm.TextDirectoryMessage(directory))
 					} else {
-						media, err = mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
+						//media, err = mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
 					}
 
 					if err != nil {

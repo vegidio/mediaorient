@@ -9,8 +9,10 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
 
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -107,22 +109,41 @@ func CalculateFileOrientation(filePath string) (*Media, error) {
 	return CalculateImageOrientation(filePath, images)
 }
 
-func CalculateFilesOrientation(filePaths []string) ([]Media, error) {
-	media := make([]Media, 0)
+func CalculateFilesOrientation(filePaths []string) <-chan Result[Media] {
+	out := make(chan Result[Media])
 
-	for _, filePath := range filePaths {
-		newMedia, err := CalculateFileOrientation(filePath)
-		if err != nil {
-			return nil, err
+	go func() {
+		defer close(out)
+
+		var wg sync.WaitGroup
+		sem := make(chan struct{}, runtime.NumCPU())
+
+		for _, filePath := range filePaths {
+			wg.Add(1)
+			sem <- struct{}{}
+
+			go func(file string) {
+				defer wg.Done()
+				defer func() { <-sem }()
+
+				newMedia, err := CalculateFileOrientation(filePath)
+				if err == nil {
+					out <- Result[Media]{Data: *newMedia}
+				} else {
+					out <- Result[Media]{Err: err}
+				}
+
+			}(filePath)
 		}
 
-		media = append(media, *newMedia)
-	}
+		wg.Wait()
+		close(sem)
+	}()
 
-	return media, nil
+	return out
 }
 
-func CalculateDirectoryOrientation(directory string, mediaType string, recursive bool) ([]Media, error) {
+func CalculateDirectoryOrientation(directory string, mediaType string, recursive bool) <-chan Result[Media] {
 	mediaTypes := make([]string, 0)
 	if mediaType == "image" || mediaType == "all" {
 		mediaTypes = append(mediaTypes, validImageTypes...)
@@ -133,7 +154,11 @@ func CalculateDirectoryOrientation(directory string, mediaType string, recursive
 
 	files, err := listFiles(directory, mediaTypes, recursive)
 	if err != nil {
-		return nil, err
+		out := make(chan Result[Media], 1)
+		defer close(out)
+
+		out <- Result[Media]{Err: err}
+		return out
 	}
 
 	return CalculateFilesOrientation(files)

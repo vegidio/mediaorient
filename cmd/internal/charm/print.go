@@ -2,9 +2,18 @@ package charm
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/vegidio/mediaorient"
 )
+
+func TextFilesMessage(amount int) string {
+	return fmt.Sprintf("⏳ Analysing %s files to calculate orientation...", green.Render(strconv.Itoa(amount)))
+}
+
+func TextDirectoryMessage(directory string) string {
+	return fmt.Sprintf("⏳ Analysing directory %s to calculate orientation...", green.Render(directory))
+}
 
 func PrintError(message string, a ...interface{}) {
 	format := fmt.Sprintf(message, a...)
@@ -26,6 +35,7 @@ func PrintReport(media []mediaorient.Media) {
 }
 
 // region - Private functions
+
 func getRotationColor(rotation int) string {
 	switch rotation {
 	case 90:
