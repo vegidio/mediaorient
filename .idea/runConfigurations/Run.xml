@@ -2,7 +2,7 @@
   <configuration default="false" name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="mediaorient" />
     <working_directory value="$PROJECT_DIR$/cmd" />
-    <parameters value="dir ~/Downloads/UMD/Reddit/CharlotteHeaven" />
+    <parameters value="dir ~/Downloads/UMD/Reddit/CharlotteHeaven -mt image" />
     <envs>
       <env name="CGO_ENABLED" value="1" />
     </envs>

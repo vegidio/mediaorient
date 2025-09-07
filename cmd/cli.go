@@ -147,7 +147,6 @@ func buildCliCommands() *cli.Command {
 			return fmt.Errorf("command missing; try 'mediaorient --help' for more information")
 		},
 		After: func(ctx context.Context, command *cli.Command) error {
-			fmt.Print("\n")
 			charm.PrintReport(media)
 			return nil
 		},

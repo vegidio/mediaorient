@@ -2,8 +2,10 @@ package charm
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
+	"github.com/samber/lo"
 	"github.com/vegidio/mediaorient"
 )
 
@@ -21,15 +23,19 @@ func PrintError(message string, a ...interface{}) {
 }
 
 func PrintReport(media []mediaorient.Media) {
-	for _, m := range media {
-		if m.Rotation > 0 {
-			if m.Type == "image" {
-				fmt.Printf("📸 The %s %s is rotated clockwise by %s\n",
-					orange.Render(m.Type), bold.Render(m.Name), getRotationColor(m.Rotation))
-			} else {
-				fmt.Printf("🎬 The %s %s is rotated clockwise by %s\n",
-					magenta.Render(m.Type), bold.Render(m.Name), getRotationColor(m.Rotation))
-			}
+	groups := lo.GroupBy(media, func(m mediaorient.Media) int {
+		return m.Rotation
+	})
+
+	delete(groups, 0)
+	angles := lo.Keys(groups)
+	sort.Ints(angles)
+
+	for _, k := range angles {
+		fmt.Printf("\nMedia rotated %s clockwise:\n", getRotationColor(k))
+
+		for _, m := range groups[k] {
+			fmt.Printf("  -> %s is rotated %s\n", bold.Render(m.Name), getRotationColor(m.Rotation))
 		}
 	}
 }
