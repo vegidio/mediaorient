@@ -19,7 +19,7 @@ func TextDirectoryMessage(directory string) string {
 
 func PrintError(message string, a ...interface{}) {
 	format := fmt.Sprintf(message, a...)
-	fmt.Printf("\n🧨 %s\n", red.Render(format))
+	fmt.Printf("🧨 %s\n", red.Render(format))
 }
 
 func PrintReport(media []mediaorient.Media) {

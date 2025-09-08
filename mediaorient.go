@@ -33,41 +33,44 @@ func CalculateImageOrientation(name string, images []image.Image) (*Media, error
 	rotations := make([]int, 0)
 
 	for _, img := range images {
-		input := preprocess(img, size)
+		rotation, tErr := func() (int, error) {
+			input := preprocess(img, size)
 
-		inputTensor, tErr := ort.NewTensor[float32](ort.NewShape(1, 3, int64(size), int64(size)), input)
-		if tErr != nil {
-			return nil, tErr
-		}
-
-		outputTensor, tErr := ort.NewEmptyTensor[float32](ort.NewShape(1, 4))
-		if tErr != nil {
-			inputTensor.Destroy()
-			return nil, tErr
-		}
-
-		if err = session.Run([]ort.Value{inputTensor}, []ort.Value{outputTensor}); err != nil {
-			inputTensor.Destroy()
-			outputTensor.Destroy()
-			return nil, err
-		}
-
-		logits := outputTensor.GetData()
-		probs := softmax(logits)
-		bestIdx, best := 0, probs[0]
-		for i := 1; i < len(probs); i++ {
-			if probs[i] > best {
-				best = probs[i]
-				bestIdx = i
+			inputTensor, tErr := ort.NewTensor[float32](ort.NewShape(1, 3, int64(size), int64(size)), input)
+			if tErr != nil {
+				return 0, tErr
 			}
+			defer inputTensor.Destroy()
+
+			outputTensor, tErr := ort.NewEmptyTensor[float32](ort.NewShape(1, 4))
+			if tErr != nil {
+				return 0, tErr
+			}
+			defer outputTensor.Destroy()
+
+			if err = session.Run([]ort.Value{inputTensor}, []ort.Value{outputTensor}); err != nil {
+				return 0, err
+			}
+
+			logits := outputTensor.GetData()
+			probs := softmax(logits)
+			bestIdx, best := 0, probs[0]
+			for i := 1; i < len(probs); i++ {
+				if probs[i] > best {
+					best = probs[i]
+					bestIdx = i
+				}
+			}
+
+			// Swap 90 and 270 degrees so we have a clockwise rotation
+			return []int{0, 270, 180, 90}[bestIdx], nil
+		}()
+
+		if tErr != nil {
+			return nil, tErr
 		}
 
-		// Swap 90 and 270 degrees so we have a clockwise rotation
-		rotation := []int{0, 270, 180, 90}[bestIdx]
 		rotations = append(rotations, rotation)
-
-		inputTensor.Destroy()
-		outputTensor.Destroy()
 	}
 
 	media := createMedia(name, images, rotations)
@@ -214,8 +217,10 @@ func preprocess(img image.Image, size int) []float32 {
 
 func createMedia(name string, images []image.Image, rotations []int) *Media {
 	mediaType := "image"
+	frames := images[:1]
 	if len(images) > 1 {
 		mediaType = "video"
+		frames = nil
 	}
 
 	rotation := lo.MaxBy(lo.Entries(lo.CountValues(rotations)), func(a, b lo.Entry[int, int]) bool {
@@ -226,7 +231,7 @@ func createMedia(name string, images []image.Image, rotations []int) *Media {
 		Name:     name,
 		Type:     mediaType,
 		Rotation: rotation.Key,
-		Frames:   images,
+		Frames:   frames,
 		Width:    images[0].Bounds().Dx(),
 		Height:   images[0].Bounds().Dy(),
 	}
