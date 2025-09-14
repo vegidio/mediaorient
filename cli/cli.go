@@ -7,11 +7,11 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/urfave/cli/v3"
-	"github.com/vegidio/mediaorient"
+	. "github.com/vegidio/mediaorient"
 )
 
 func buildCliCommands() *cli.Command {
-	var media []mediaorient.Media
+	var media []Media
 	var files []string
 	var directory string
 	var output string
@@ -23,14 +23,14 @@ func buildCliCommands() *cli.Command {
 
 	return &cli.Command{
 		Name:            "mediaorient",
-		Usage:           "a tool to calculate/fix the orientation of images & videos",
+		Usage:           "a tool to calculate the orientation of images & videos",
 		UsageText:       "mediaorient <command>",
-		Version:         mediaorient.Version,
+		Version:         Version,
 		HideHelpCommand: true,
 		Commands: []*cli.Command{
 			{
 				Name:      "files",
-				Usage:     "calculate/fix the orientation of one or more files",
+				Usage:     "calculate the orientation of one or more files",
 				UsageText: "mediaorient files <file1> [<file2> ...] ",
 				Flags:     []cli.Flag{},
 				Action: func(ctx context.Context, command *cli.Command) error {
@@ -45,11 +45,14 @@ func buildCliCommands() *cli.Command {
 						return fullFile
 					})
 
-					result := mediaorient.CalculateFilesOrientation(files)
+					result := CalculateFilesOrientation(files)
 					if output == "report" {
 						media, err = charm.StartSpinner(result, charm.TextFilesMessage(len(files)))
 					} else {
-						//media, err = mediaorient.CalculateFilesOrientation(files)
+						results := lo.ChannelToSlice(result)
+						media = lo.FilterMap(results, func(r Result[Media], _ int) (Media, bool) {
+							return r.Data, r.IsSuccess()
+						})
 					}
 
 					if err != nil {
@@ -61,7 +64,7 @@ func buildCliCommands() *cli.Command {
 			},
 			{
 				Name:      "dir",
-				Usage:     "calculate/fix the orientation of files in a directory",
+				Usage:     "calculate the orientation of files in a directory",
 				UsageText: "mediaorient dir <directory> [-r] [--mt <media-type>]",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
@@ -75,7 +78,7 @@ func buildCliCommands() *cli.Command {
 					&cli.StringFlag{
 						Name:        "media-type",
 						Aliases:     []string{"mt"},
-						Usage:       "type of media to compare; image | video | all",
+						Usage:       "type of media to calculate; image | video | all",
 						Value:       "all",
 						DefaultText: "all",
 						Destination: &mediaType,
@@ -95,11 +98,14 @@ func buildCliCommands() *cli.Command {
 						return nil
 					}
 
-					result := mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
+					result := CalculateDirectoryOrientation(directory, mediaType, recursive)
 					if output == "report" {
 						media, err = charm.StartSpinner(result, charm.TextDirectoryMessage(directory))
 					} else {
-						//media, err = mediaorient.CalculateDirectoryOrientation(directory, mediaType, recursive)
+						results := lo.ChannelToSlice(result)
+						media = lo.FilterMap(results, func(r Result[Media], _ int) (Media, bool) {
+							return r.Data, r.IsSuccess()
+						})
 					}
 
 					if err != nil {
@@ -114,7 +120,7 @@ func buildCliCommands() *cli.Command {
 			&cli.StringFlag{
 				Name:        "output",
 				Aliases:     []string{"o"},
-				Usage:       "format how similarity is reported; report | json | csv",
+				Usage:       "format how orientation is reported; report | json | csv",
 				Value:       "report",
 				DefaultText: "report",
 				Destination: &output,
@@ -137,7 +143,7 @@ func buildCliCommands() *cli.Command {
 			&cli.BoolFlag{
 				Name:        "dry-run",
 				Aliases:     []string{"dr"},
-				Usage:       "do not rotate any media; only prints the ones that would be modified",
+				Usage:       "do not rotate any media; only print the ones that would be modified",
 				Value:       false,
 				DefaultText: "false",
 				Destination: &dryRun,

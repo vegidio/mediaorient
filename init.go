@@ -1,17 +1,26 @@
 package mediaorient
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/google/go-github/v74/github"
+	"github.com/samber/lo"
+	"github.com/vegidio/go-sak/crypto"
+	"github.com/vegidio/go-sak/fs"
+	gitsak "github.com/vegidio/go-sak/github"
+	"github.com/vegidio/go-sak/memo"
 	ort "github.com/yalue/onnxruntime_go"
 )
 
-//go:embed model/image_orientation.onnx
-var modelBinary []byte
 var modelName = "image_orientation.onnx"
 
 // Initialize sets up the media orientation detection system by configuring the ONNX runtime and ensuring all required
@@ -26,17 +35,23 @@ var modelName = "image_orientation.onnx"
 //	    log.Fatal("Failed to initialize media orientation detection:", err)
 //	}
 func Initialize() error {
-	// Check if OnnxRuntime and the model are already saved in the user's config directory
-	onnxPath, modelPath, exists := hasBinaries("mediaorient")
-
-	if !exists {
-		if err := saveBinaries(onnxPath, modelPath); err != nil {
-			return fmt.Errorf("error initializing mediaorient: %v\n", err)
+	// Install the ONNX runtime if it's not already installed
+	if yes := shouldInstallRuntime(); yes {
+		if err := installRuntime(); err != nil {
+			return err
 		}
 	}
 
-	if err := startRuntime(onnxPath, modelPath); err != nil {
-		return fmt.Errorf("error initializing mediaorient: %v\n", err)
+	// Download the model if it's not already present
+	if url, yes := shouldDownloadModel(); yes {
+		if err := downloadModel(url); err != nil {
+			return err
+		}
+	}
+
+	// Initialize the ONNX runtime
+	if err := startRuntime(); err != nil {
+		return err
 	}
 
 	return nil
@@ -62,61 +77,92 @@ func Destroy() {
 
 // region - Private functions
 
-func hasBinaries(configName string) (string, string, bool) {
-	configDir, err := os.UserConfigDir()
+func shouldInstallRuntime() bool {
+	configDir, err := fs.MkUserConfigDir("mediaorient")
 	if err != nil {
 		log.Fatalf("error getting user config directory: %v\n", err)
 	}
 
-	fullConfigDir := filepath.Join(configDir, configName)
-	onnxPath := filepath.Join(fullConfigDir, libOnnxName)
-	modelPath := filepath.Join(fullConfigDir, modelName)
-
-	if _, fErr := os.Stat(onnxPath); fErr != nil {
-		return onnxPath, modelPath, false
-	}
-	if _, fErr := os.Stat(modelPath); fErr != nil {
-		return onnxPath, modelPath, false
-	}
-
-	return onnxPath, modelPath, true
+	runtimePath := filepath.Join(configDir, libOnnxName)
+	_, err = os.Stat(runtimePath)
+	return os.IsNotExist(err)
 }
 
-func saveBinaries(onnxPath, modelPath string) error {
-	directory := filepath.Dir(onnxPath)
-	if err := os.MkdirAll(directory, 0755); err != nil {
-		return err
-	}
-
-	// Copy the OnnxRuntime library
-	f1, err := os.Create(onnxPath)
+func installRuntime() error {
+	file, err := fs.MkUserConfigFile("mediaorient", libOnnxName)
 	if err != nil {
 		return err
 	}
-	defer f1.Close()
+	defer file.Close()
 
-	if fErr := os.WriteFile(onnxPath, libOnnxBinary, 0755); fErr != nil {
-		return fErr
-	}
-
-	// Copy the orientation model
-	f2, err := os.Create(modelPath)
+	_, err = file.Write(libOnnxBinary)
 	if err != nil {
 		return err
-	}
-	defer f2.Close()
-
-	if fErr := os.WriteFile(modelPath, modelBinary, 0755); fErr != nil {
-		return fErr
 	}
 
 	return nil
 }
 
-func startRuntime(onnxPath, modelPath string) error {
-	var err error
-	ort.SetSharedLibraryPath(onnxPath)
+func shouldDownloadModel() (string, bool) {
+	configDir, err := fs.MkUserConfigDir("mediaorient")
+	if err != nil {
+		log.Fatalf("error getting user config directory: %v\n", err)
+	}
 
+	url, remoteHash, err := getLatestModel()
+	if err != nil {
+		log.Fatalf("error downloading the latest model: %v\n", err)
+	}
+
+	modelPath := filepath.Join(configDir, modelName)
+	if _, fErr := os.Stat(modelPath); os.IsNotExist(fErr) {
+		// The model is not present, so we must download it
+		return url, true
+	}
+
+	localHash, err := crypto.Sha256File(modelPath)
+	if err != nil {
+		log.Fatalf("error getting the model signature: %v\n", err)
+	}
+
+	return url, localHash != remoteHash
+}
+
+func downloadModel(url string) error {
+	file, err := fs.MkUserConfigFile("mediaorient", modelName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func startRuntime() error {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	runtimePath := filepath.Join(configDir, "mediaorient", libOnnxName)
+	modelPath := filepath.Join(configDir, "mediaorient", modelName)
+
+	ort.SetSharedLibraryPath(runtimePath)
 	if err = ort.InitializeEnvironment(); err != nil {
 		return err
 	}
@@ -128,6 +174,51 @@ func startRuntime(onnxPath, modelPath string) error {
 	}
 
 	return nil
+}
+
+func getLatestModel() (string, string, error) {
+	cachePath, err := fs.MkUserConfigDir("mediaorient", "cache")
+	if err != nil {
+		return "", "", err
+	}
+
+	opts := memo.CacheOpts{MaxEntries: 100, MaxCapacity: 1024 * 1024}
+	m, err := memo.NewDiskOnly(cachePath, opts)
+	if err != nil {
+		return "", "", err
+	}
+	defer m.Close()
+
+	ctx := context.Background()
+	key := memo.KeyFrom("getLatestModel")
+	ttl := time.Hour * 24 * 7 // Cache for 1 week
+
+	release, err := memo.Do(m, ctx, key, ttl, func(ctx context.Context) (*github.RepositoryRelease, error) {
+		r, gErr := gitsak.GetLatestRelease("vegidio", "mediaorient")
+		if gErr != nil {
+			return nil, gErr
+		}
+
+		return r, nil
+	})
+
+	if err != nil {
+		return "", "", err
+	}
+
+	asset, found := lo.Find(release.Assets, func(item *github.ReleaseAsset) bool {
+		return item.GetName() == modelName
+	})
+
+	if !found {
+		return "", "", fmt.Errorf("model not found in latest release")
+	}
+
+	url := fmt.Sprintf("https://github.com/vegidio/mediaorient/releases/download/%s/image_orientation.onnx",
+		release.GetName())
+	hash := strings.TrimPrefix(asset.GetDigest(), "sha256:")
+
+	return url, hash, nil
 }
 
 // endregion

@@ -3,7 +3,7 @@
 <p align="center">
 <img src="docs/images/icon.avif" width="240" alt="mediaorient"/>
 <br/>
-<strong>mediaorient</strong> is a CLI tool and Go library to calculate/fix the orientation of images & videos.
+<strong>mediaorient</strong> is a CLI tool and Go library to calculate the orientation of images & videos.
 </p>
 
 ## 🖼️ Usage
@@ -20,34 +20,17 @@ The binaries are available for Windows, macOS, and Linux. Download the [latest r
 <img src="docs/images/screenshot.avif" width="80%" alt="mediaorient"/>
 </p>
 
-<details>
-<summary>Calculating the similarity score of two files</summary>
+#### Calculate the orientation of one or more files
 
-#### Run the command below in the terminal:
-
-```bash
-$ mediaorient score <media1> <media2>
-```
-</details>
-
-<details>
-<summary>Comparing two or more files</summary>
-
-#### Run the command below in the terminal:
+Run the command below in the terminal:
 
 ```bash
-$ mediaorient files <media1> <media2> [<media3> ...]
+$ mediaorient files <media1> [<media2> ...]
 ```
 
-Where:
+#### Calculate the orientation of a directory
 
-- `files` (mandatory): the path to the media files you want to compare. You must pass at least two files, separated by space.
-</details>
-
-<details>
-<summary>Comparing multiple files in a directory</summary>
-
-#### Run the command below in the terminal:
+Run the command below in the terminal:
 
 ```bash
 $ mediaorient dir <directory> [-r] [--mt <media-type>]
@@ -55,60 +38,50 @@ $ mediaorient dir <directory> [-r] [--mt <media-type>]
 
 Where:
 
-- `directory` (mandatory): the path to the directory where the media files are located.
-- `-r` (optional): recursively search for files in subdirectories to include in the comparison.
-- `--mt` (optional): the file types to be included in the comparison. You can choose between `image`, `video`, or `all` (default).
-</details>
-
-<details>
-<summary>Renaming files based on similarity</summary>
-
-#### Run the command below in the terminal:
-
-```bash
-$ mediaorient rename <directory> [-r] [--mt <media-type>]
-```
-
-Where:
-
-- `directory` (mandatory): the path to the directory where the media files are located.
-- `-r` (optional): recursively search for files in subdirectories to include in the comparison.
-- `--mt` (optional): the file types to be included in the comparison. You can choose between `image`, `video`, or `all` (default).
-</details>
+- `dir` (mandatory): the path to the directory where the media files are located.
+- `-r` (optional): recursively search for files in subdirectories to include in the calculation.
+- `--mt` (optional): the file types to be included in the calculation. You can choose between `image`, `video`, or `all` (default).
 
 ---
 
 Other parameters you can use:
 
-- `-t` (optional): the threshold for the similarity score; a value between 0–1, where 0 is completely different and 1 is identical. The default value is `0.8`, which means only similarities of 80% or higher will be reported.
 - `-o` (optional): the output format; you can choose `report` (default) or, if you prefer a raw output, `json` or `csv`.
-- `--ie` (optional): ignores errors and continues the comparison even if some files are not valid.
-- `--ff` (optional; images only): flips the frames vertically and horizontally during the comparison.
-- `--fr` (optional; images only): rotates the frames in multiple angles during the comparison.
+- `--ie` (optional): ignores errors and continues the calculation even if some files are not valid.
 
 For the full list of parameters, type `mediaorient --help` in the terminal.
 
 ## 🎞️ Supported media types
 
-In its default configuration, **mediaorient** supports media files with the following extensions:
+In its default configuration, the **mediaorient** library supports media files with the following extensions:
 
 - Images: `.bmp`, `.gif`, `.jpg` (`.jpeg`), `.png`, `.tiff`, `.webp`
 - Videos: `.avi`, `.mp4` (`.m4v`), `.mkv`, `.mov`, `.webm`
 
-If you want to work with additional file extensions, you can use the functions `AddImageType` or `AddVideoType` before performing any similarity comparisons. This allows **mediaorient** to include these file types during calculations.
+The CLI supports two additional image formats: `.avif` and `.heif`.
 
-When adding support for new media formats, it's essential to load a 3rd party library capable of decoding them. For example, to enable AVIF image comparison in **mediaorient**, you could use a library like [avif-go](https://github.com/vegidio/avif-go) to do this:
+If you want to work with additional file extensions in the library, like those two above, you can use the functions `AddImageType` or `AddVideoType` before performing any orientation calculation. This allows **mediaorient** to include these file types during calculations.
+
+When adding support for new media formats, it's essential to load a 3rd party library capable of decoding them. For example, to enable AVIF image calculation in **mediaorient**, you could use a library like [avif-go](https://github.com/vegidio/avif-go) to do this:
 
 ```go
 import _ "github.com/vegidio/avif-go"
-mediaorient.AddImageType(".avif")
+mediasim.AddImageType(".avif")
 ```
 
 ## 💣 Troubleshooting
 
+### Internet Connection Required On The First Run
+
+This app uses a Large Language Model (LLM) that was trained with almost 1 million images, creating a neural network of nearly 100 MB. Unfortunately, it becomes impractical to embed this data in the executable, otherwise the file would become to big.
+
+For this reason, the first time you run the app, it will download the model from the internet; this may take a few seconds, depending on your internet connection.
+
+Besides preventing the executable from being too big, this also allows app to use the most recent version of the model, which may contain improvements and bug fixes.
+
 ### Miscalculation of Media Orientation
 
-This app uses a neural network to determine the orientation of images and videos. While this method is accurate about 99% of the time, it isn’t perfect. It works very well for everyday media—such as photos of people, animals, documents and common scenes, but may perform less reliably with certain special cases.
+While the LLM has accuracy of about 99%, it isn’t perfect. It works very well for everyday media—such as photos of people, animals, documents and common scenes, but may perform less reliably with certain special cases.
 
 For example, if you have a media of a medical procedure, the app may not detect the correct orientation because the model was not trained (or was only minimally trained), on this type of media. You can help improve the app by contributing to the training dataset. Simply upload your own media [here](https://mega.nz/filerequest/eGNGUqolkGI), so that in future versions of the app this kind of media will be properly detected.
 
@@ -116,22 +89,13 @@ Any media you upload will not be shared with anyone else and will be used solely
 
 However, I cannot emphasize this enough: **do NOT upload any illegal content**. If you upload illegal content, I will not only block your access to this project, but I will also report you to the authorities using your IP address and any other information available.
 
-### The App Binary Is Too Large
-
-There are two main reasons for this:
-
-1. This app depends on [ONNX Runtime](https://onnxruntime.ai). I could ask users to install this dependency separately, but not everyone is tech-savvy, and that would create unnecessary difficulties. To ensure a smoother experience, I chose to embed ONNX Runtime directly in the app.
-2. The pre-trained neural network is quite large. (Generally, the larger the model, the more accurate it is at determining media orientation.) This contributes significantly to the app’s binary size.
-
-Unfortunately, there isn’t much I can do about this. If you are using this project as a Go library, expect your final binary to increase by at least 100 MB.
-
 ### Video Orientation Doesn't Work
 
 If the orientation calculation/fix of videos is not working, it may be because you don't have [FFmpeg](https://www.ffmpeg.org/download.html) working in your computer, which is required to extract frames from the video files.
 
 When FFmpeg is not found, **mediaorient** will try to automatically download and install it for you. Even though this will work in most cases, it may fail for unpredictable reasons.
 
-The best option to have the video comparison working is to install FFmpeg yourself in your computer and make sure it is available in your `PATH`.
+The best option to have the video calculation working is to install FFmpeg yourself in your computer and make sure it is available in your `PATH`.
 
 ### "App Is Damaged/Blocked..." (Windows & macOS only)
 
