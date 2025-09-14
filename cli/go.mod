@@ -22,6 +22,8 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
+	github.com/google/go-github/v74 v74.0.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -33,7 +35,8 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/u2takey/ffmpeg-go v0.5.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
-	github.com/vegidio/ffmpeg-downloader v0.0.0-20250409053011-96df6127bead // indirect
+	github.com/vegidio/ffmpeg-downloader v0.0.0-20250914145524-f66ce646d79c // indirect
+	github.com/vegidio/go-sak v0.0.0-20250914123721-4aceb8dd6b7b // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yalue/onnxruntime_go v1.21.0 // indirect
 	golang.org/x/image v0.30.0 // indirect

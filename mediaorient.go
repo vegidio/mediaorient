@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/vegidio/go-sak/fs"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -155,7 +156,12 @@ func CalculateDirectoryOrientation(directory string, mediaType string, recursive
 		mediaTypes = append(mediaTypes, validVideoTypes...)
 	}
 
-	files, err := listFiles(directory, mediaTypes, recursive)
+	flags := fs.LpFile
+	if recursive {
+		flags |= fs.LpRecursive
+	}
+
+	files, err := fs.ListPath(directory, flags, mediaTypes)
 	if err != nil {
 		out := make(chan Result[Media], 1)
 		defer close(out)

@@ -4,6 +4,7 @@
 <img src="docs/images/icon.avif" width="240" alt="mediaorient"/>
 <br/>
 <strong>mediaorient</strong> is a CLI tool and Go library to calculate/fix the orientation of images & videos.
+</p>
 
 ## 🖼️ Usage
 
