@@ -147,7 +147,7 @@ func CalculateFilesOrientation(filePaths []string) <-chan Result[Media] {
 	return out
 }
 
-func CalculateDirectoryOrientation(directory string, mediaType string, recursive bool) <-chan Result[Media] {
+func CalculateDirectoryOrientation(directory string, mediaType string, recursive bool) (<-chan Result[Media], int) {
 	mediaTypes := make([]string, 0)
 	if mediaType == "image" || mediaType == "all" {
 		mediaTypes = append(mediaTypes, validImageTypes...)
@@ -167,10 +167,10 @@ func CalculateDirectoryOrientation(directory string, mediaType string, recursive
 		defer close(out)
 
 		out <- Result[Media]{Err: err}
-		return out
+		return out, 0
 	}
 
-	return CalculateFilesOrientation(files)
+	return CalculateFilesOrientation(files), len(files)
 }
 
 // region - Private functions

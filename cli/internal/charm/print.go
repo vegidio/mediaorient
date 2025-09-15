@@ -9,12 +9,12 @@ import (
 	"github.com/vegidio/mediaorient"
 )
 
-func TextFilesMessage(amount int) string {
-	return fmt.Sprintf("⏳ Analysing %s files to calculate orientation...", green.Render(strconv.Itoa(amount)))
+func PrintCalculateFiles(amount int) {
+	fmt.Printf("⏳ Calculating orientation in %s files\n", green.Render(strconv.Itoa(amount)))
 }
 
-func TextDirectoryMessage(directory string) string {
-	return fmt.Sprintf("⏳ Analysing directory %s to calculate orientation...", green.Render(directory))
+func PrintCalculateDirectory(dir string) {
+	fmt.Printf("⏳ Calculating orientation in the directory %s\n", green.Render(dir))
 }
 
 func PrintError(message string, a ...interface{}) {
@@ -22,12 +22,15 @@ func PrintError(message string, a ...interface{}) {
 	fmt.Printf("🧨 %s\n", red.Render(format))
 }
 
-func PrintReport(media []mediaorient.Media) {
+func PrintReport(media []mediaorient.Media, includeZero bool) {
 	groups := lo.GroupBy(media, func(m mediaorient.Media) int {
 		return m.Rotation
 	})
 
-	delete(groups, 0)
+	if !includeZero {
+		delete(groups, 0)
+	}
+
 	angles := lo.Keys(groups)
 	sort.Ints(angles)
 
@@ -35,7 +38,7 @@ func PrintReport(media []mediaorient.Media) {
 		fmt.Printf("\nMedia rotated %s clockwise:\n", getRotationColor(k))
 
 		for _, m := range groups[k] {
-			fmt.Printf("  -> %s is rotated %s\n", bold.Render(m.Name), getRotationColor(m.Rotation))
+			fmt.Printf("  -> %s\n", bold.Render(m.Name))
 		}
 	}
 }

@@ -18,7 +18,8 @@ func buildCliCommands() *cli.Command {
 	var recursive bool
 	var mediaType string
 	var ignoreErrors bool
-	var dryRun bool
+	var includeZero bool
+	var autoFix bool
 	var err error
 
 	return &cli.Command{
@@ -35,9 +36,15 @@ func buildCliCommands() *cli.Command {
 				Flags:     []cli.Flag{},
 				Action: func(ctx context.Context, command *cli.Command) error {
 					files = command.Args().Slice()
+					amount := len(files)
+					includeZero = true
 
-					if len(files) < 1 {
+					if amount < 1 {
 						return fmt.Errorf("at least one files must be specified")
+					}
+
+					if output == "report" {
+						charm.PrintCalculateFiles(amount)
 					}
 
 					files = lo.Map(files, func(file string, _ int) string {
@@ -46,15 +53,7 @@ func buildCliCommands() *cli.Command {
 					})
 
 					result := CalculateFilesOrientation(files)
-					if output == "report" {
-						media, err = charm.StartSpinner(result, charm.TextFilesMessage(len(files)))
-					} else {
-						results := lo.ChannelToSlice(result)
-						media = lo.FilterMap(results, func(r Result[Media], _ int) (Media, bool) {
-							return r.Data, r.IsSuccess()
-						})
-					}
-
+					media, err = getMedia(result, len(files), output)
 					if err != nil {
 						return err
 					}
@@ -93,21 +92,19 @@ func buildCliCommands() *cli.Command {
 				},
 				Action: func(ctx context.Context, command *cli.Command) error {
 					directory = command.Args().First()
+					includeZero = false
+
+					if output == "report" {
+						charm.PrintCalculateDirectory(directory)
+					}
+
 					directory, err = expandPath(directory)
 					if err != nil {
 						return nil
 					}
 
-					result := CalculateDirectoryOrientation(directory, mediaType, recursive)
-					if output == "report" {
-						media, err = charm.StartSpinner(result, charm.TextDirectoryMessage(directory))
-					} else {
-						results := lo.ChannelToSlice(result)
-						media = lo.FilterMap(results, func(r Result[Media], _ int) (Media, bool) {
-							return r.Data, r.IsSuccess()
-						})
-					}
-
+					result, total := CalculateDirectoryOrientation(directory, mediaType, recursive)
+					media, err = getMedia(result, total, output)
 					if err != nil {
 						return err
 					}
@@ -141,20 +138,47 @@ func buildCliCommands() *cli.Command {
 				Destination: &ignoreErrors,
 			},
 			&cli.BoolFlag{
-				Name:        "dry-run",
-				Aliases:     []string{"dr"},
-				Usage:       "do not rotate any media; only print the ones that would be modified",
+				Name:        "auto-fix",
+				Aliases:     []string{"af"},
+				Usage:       "automatically fix orientation of files",
 				Value:       false,
 				DefaultText: "false",
-				Destination: &dryRun,
+				Destination: &autoFix,
 			},
 		},
 		Action: func(ctx context.Context, command *cli.Command) error {
 			return fmt.Errorf("command missing; try 'mediaorient --help' for more information")
 		},
 		After: func(ctx context.Context, command *cli.Command) error {
-			charm.PrintReport(media)
+			charm.PrintReport(media, includeZero)
 			return nil
 		},
 	}
 }
+
+// region - Private functions
+
+func getMedia(
+	result <-chan Result[Media],
+	total int,
+	output string,
+) ([]Media, error) {
+	var media []Media
+	var err error
+
+	if output == "report" {
+		media, err = charm.StartProgress(result, total)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		results := lo.ChannelToSlice(result)
+		media = lo.FilterMap(results, func(r Result[Media], _ int) (Media, bool) {
+			return r.Data, r.IsSuccess()
+		})
+	}
+
+	return media, nil
+}
+
+// endregion
