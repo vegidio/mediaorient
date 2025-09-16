@@ -3,7 +3,7 @@
 <p align="center">
 <img src="docs/images/icon.avif" width="240" alt="mediaorient"/>
 <br/>
-<strong>mediaorient</strong> is a CLI tool and Go library to calculate the orientation of images & videos.
+<strong>mediaorient</strong> is a CLI tool and Go library to calculate the orientation of<br>images & videos based on their content, not EXIF data.
 </p>
 
 ## 🖼️ Usage
@@ -66,32 +66,32 @@ When adding support for new media formats, it's essential to load a 3rd party li
 
 ```go
 import _ "github.com/vegidio/avif-go"
-mediasim.AddImageType(".avif")
+mediaorient.AddImageType(".avif")
 ```
 
 ## 💣 Troubleshooting
 
 ### Internet Connection Required On The First Run
 
-This app uses a Large Language Model (LLM) that was trained with almost 1 million images, creating a neural network of nearly 100 MB. Unfortunately, it becomes impractical to embed this data in the executable, otherwise the file would become to big.
+This app uses a neural network trained with almost 1 million images, creating a model of nearly 100 MB. Unfortunately, it becomes impractical to embed this data in the executable, otherwise the file would become too big.
 
 For this reason, the first time you run the app, it will download the model from the internet; this may take a few seconds, depending on your internet connection.
 
-Besides preventing the executable from being too big, this also allows app to use the most recent version of the model, which may contain improvements and bug fixes.
+This approach not only prevents an excessive executable size but also allows the app to always use the most recent version of the model, which may contain improvements and bug fixes.
 
 ### Miscalculation of Media Orientation
 
-While the LLM has accuracy of about 99%, it isn’t perfect. It works very well for everyday media—such as photos of people, animals, documents and common scenes, but may perform less reliably with certain special cases.
+While the model has accuracy of about 99%, it isn’t perfect. It works very well with everyday media, such as photos of people, animals, documents and common scenes, but may perform less reliably with certain special cases.
 
-For example, if you have a media of a medical procedure, the app may not detect the correct orientation because the model was not trained (or was only minimally trained), on this type of media. You can help improve the app by contributing to the training dataset. Simply upload your own media [here](https://mega.nz/filerequest/eGNGUqolkGI), so that in future versions of the app this kind of media will be properly detected.
+For example, if you have a media depicting a medical procedure, the app may not detect the correct orientation because the model was not trained (or was only minimally trained), on this type of media. You can help improve the app by contributing to the training dataset. Upload your own media [here](https://mega.nz/filerequest/eGNGUqolkGI), so that in future versions of the app this kind of media will be properly detected.
 
 Any media you upload will not be shared with anyone else and will be used solely to train the neural network. I’m not here to judge anyone, so feel free to upload any *legal* content.
 
-However, I cannot emphasize this enough: **do NOT upload any illegal content**. If you upload illegal content, I will not only block your access to this project, but I will also report you to the authorities using your IP address and any other information available.
+However, I cannot emphasize this enough: **do NOT upload any illegal media**. If you upload something illegal, I will not only block your access to this project, but I will also report you to the authorities using your IP address and any other information available.
 
 ### Video Orientation Doesn't Work
 
-If the orientation calculation/fix of videos is not working, it may be because you don't have [FFmpeg](https://www.ffmpeg.org/download.html) working in your computer, which is required to extract frames from the video files.
+If the orientation calculation of videos is not working, it may be because you don't have [FFmpeg](https://www.ffmpeg.org/download.html) working in your computer, which is required to extract frames from the video files.
 
 When FFmpeg is not found, **mediaorient** will try to automatically download and install it for you. Even though this will work in most cases, it may fail for unpredictable reasons.
 

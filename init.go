@@ -61,7 +61,7 @@ func Initialize(name string, onDownload func()) error {
 
 	// Download the model if it's not already present
 	if url, yes := shouldDownloadModel(name); yes {
-		// Notify the user that the model is being downloaded
+		// Notify the user that the model will be downloaded
 		onDownload()
 
 		if err := downloadModel(url, name); err != nil {
@@ -86,7 +86,7 @@ func Initialize(name string, onDownload func()) error {
 //
 // # Example:
 //
-//	if err := mediaorient.Initialize(); err != nil {
+//	if err := mediaorient.Initialize("myapp", nil); err != nil {
 //	    log.Fatal("Initialization failed:", err)
 //	}
 //	defer mediaorient.Destroy() // Ensure cleanup on exit
