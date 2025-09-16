@@ -9,6 +9,10 @@ import (
 	"github.com/vegidio/mediaorient"
 )
 
+func PrintDownloadModel() {
+	fmt.Printf("\n🌟 %s\n", yellow.Render("Downloading the neural network model..."))
+}
+
 func PrintCalculateFiles(amount int) {
 	fmt.Printf("⏳ Calculating orientation in %s files\n", green.Render(strconv.Itoa(amount)))
 }

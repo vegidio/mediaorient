@@ -23,34 +23,54 @@ import (
 
 var modelName = "image_orientation.onnx"
 
-// Initialize sets up the media orientation detection system by configuring the ONNX runtime and ensuring all required
-// binaries are available.
+// Initialize sets up the media orientation detection system by ensuring all required dependencies are available.
 //
-// # Returns:
-//   - error: nil on success, or an error describing what went wrong during initialization.
+// This function performs a three-step initialization process:
+//  1. Installs the ONNX runtime library if not already present in the user's config directory
+//  2. Downloads the latest image orientation model if needed or outdated
+//  3. Initializes the ONNX runtime session with the downloaded model
+//
+// The name parameter specifies the application name used to create a dedicated config directory under the user's
+// standard configuration path (e.g., ~/.config/name on Linux). It's important that you reuse the same name on later
+// calls to Initialize() to ensure that the same config directory is used.
+//
+// The onDownload callback function is called when the model needs to be downloaded, allowing the caller to notify users
+// about the download process (e.g., show a progress indicator).
+//
+// Returns an error if any step fails, including:
+//   - Unable to create config directories or files
+//   - Network errors during model download
+//   - ONNX runtime initialization failures
 //
 // # Example:
 //
-//	if err := mediaorient.Initialize(); err != nil {
-//	    log.Fatal("Failed to initialize media orientation detection:", err)
+//	err := mediaorient.Initialize("myapp", func() {
+//	    fmt.Println("Downloading model, please wait...")
+//	})
+//	if err != nil {
+//	    log.Fatal("Failed to initialize:", err)
 //	}
-func Initialize() error {
+//	defer mediaorient.Destroy() // Clean up resources
+func Initialize(name string, onDownload func()) error {
 	// Install the ONNX runtime if it's not already installed
-	if yes := shouldInstallRuntime(); yes {
-		if err := installRuntime(); err != nil {
+	if yes := shouldInstallRuntime(name); yes {
+		if err := installRuntime(name); err != nil {
 			return err
 		}
 	}
 
 	// Download the model if it's not already present
-	if url, yes := shouldDownloadModel(); yes {
-		if err := downloadModel(url); err != nil {
+	if url, yes := shouldDownloadModel(name); yes {
+		// Notify the user that the model is being downloaded
+		onDownload()
+
+		if err := downloadModel(url, name); err != nil {
 			return err
 		}
 	}
 
 	// Initialize the ONNX runtime
-	if err := startRuntime(); err != nil {
+	if err := startRuntime(name); err != nil {
 		return err
 	}
 
@@ -77,8 +97,8 @@ func Destroy() {
 
 // region - Private functions
 
-func shouldInstallRuntime() bool {
-	configDir, err := fs.MkUserConfigDir("mediaorient")
+func shouldInstallRuntime(name string) bool {
+	configDir, err := fs.MkUserConfigDir(name)
 	if err != nil {
 		log.Fatalf("error getting user config directory: %v\n", err)
 	}
@@ -88,8 +108,8 @@ func shouldInstallRuntime() bool {
 	return os.IsNotExist(err)
 }
 
-func installRuntime() error {
-	file, err := fs.MkUserConfigFile("mediaorient", libOnnxName)
+func installRuntime(name string) error {
+	file, err := fs.MkUserConfigFile(name, libOnnxName)
 	if err != nil {
 		return err
 	}
@@ -103,13 +123,13 @@ func installRuntime() error {
 	return nil
 }
 
-func shouldDownloadModel() (string, bool) {
-	configDir, err := fs.MkUserConfigDir("mediaorient")
+func shouldDownloadModel(name string) (string, bool) {
+	configDir, err := fs.MkUserConfigDir(name)
 	if err != nil {
 		log.Fatalf("error getting user config directory: %v\n", err)
 	}
 
-	url, remoteHash, err := getLatestModel()
+	url, remoteHash, err := getLatestModel(name)
 	if err != nil {
 		log.Fatalf("error downloading the latest model: %v\n", err)
 	}
@@ -128,8 +148,8 @@ func shouldDownloadModel() (string, bool) {
 	return url, localHash != remoteHash
 }
 
-func downloadModel(url string) error {
-	file, err := fs.MkUserConfigFile("mediaorient", modelName)
+func downloadModel(url string, name string) error {
+	file, err := fs.MkUserConfigFile(name, modelName)
 	if err != nil {
 		return err
 	}
@@ -153,14 +173,14 @@ func downloadModel(url string) error {
 	return nil
 }
 
-func startRuntime() error {
+func startRuntime(name string) error {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return err
 	}
 
-	runtimePath := filepath.Join(configDir, "mediaorient", libOnnxName)
-	modelPath := filepath.Join(configDir, "mediaorient", modelName)
+	runtimePath := filepath.Join(configDir, name, libOnnxName)
+	modelPath := filepath.Join(configDir, name, modelName)
 
 	ort.SetSharedLibraryPath(runtimePath)
 	if err = ort.InitializeEnvironment(); err != nil {
@@ -176,8 +196,8 @@ func startRuntime() error {
 	return nil
 }
 
-func getLatestModel() (string, string, error) {
-	cachePath, err := fs.MkUserConfigDir("mediaorient", "cache")
+func getLatestModel(name string) (string, string, error) {
+	cachePath, err := fs.MkUserConfigDir(name, "cache")
 	if err != nil {
 		return "", "", err
 	}

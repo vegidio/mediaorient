@@ -13,7 +13,11 @@ import (
 )
 
 func main() {
-	if err := mediaorient.Initialize(); err != nil {
+	onDownload := func() {
+		charm.PrintDownloadModel()
+	}
+
+	if err := mediaorient.Initialize("mediaorirent", onDownload); err != nil {
 		charm.PrintError(fmt.Sprintf("Failed to initialize media orientation detection: %v\n", err))
 		return
 	}

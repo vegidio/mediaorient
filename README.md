@@ -58,7 +58,7 @@ In its default configuration, the **mediaorient** library supports media files w
 - Images: `.bmp`, `.gif`, `.jpg` (`.jpeg`), `.png`, `.tiff`, `.webp`
 - Videos: `.avi`, `.mp4` (`.m4v`), `.mkv`, `.mov`, `.webm`
 
-The CLI supports two additional image formats: `.avif` and `.heif`.
+The CLI supports two additional image formats: `.avif` and `.heic`.
 
 If you want to work with additional file extensions in the library, like those two above, you can use the functions `AddImageType` or `AddVideoType` before performing any orientation calculation. This allows **mediaorient** to include these file types during calculations.
 
