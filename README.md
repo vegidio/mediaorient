@@ -138,7 +138,7 @@ $ task cli os=windows arch=amd64
 
 ## 📝 License
 
-**mediaorient** is released under the MIT License. See [LICENSE](LICENSE) for details.
+**mediaorient** is released under the Apache 2.0 License. See [LICENSE](LICENSE) for details.
 
 ## 👨🏾‍💻 Author
 
